@@ -1,41 +1,13 @@
-resource "aws_vpc" "this" {
-  cidr_block = var.vpc_cidr
-  tags = { Name = "${var.cluster_name}-vpc" }
-}
+module "vpc" {
+  source  = "terraform-aws-modules/vpc/aws"
+  version = "~> 5.0"
 
-resource "aws_internet_gateway" "igw" {
-  vpc_id = aws_vpc.this.id
-  tags = { Name = "${var.cluster_name}-igw" }
-}
+  name = "eks-vpc"
+  cidr = "10.0.0.0/16"
 
-resource "aws_subnet" "public" {
-  for_each = toset(var.public_subnets)
-  vpc_id = aws_vpc.this.id
-  cidr_block = each.value
-  map_public_ip_on_launch = true
-  tags = { Name = "${var.cluster_name}-public-${each.key}" }
-}
+  azs             = ["us-east-1a", "us-east-1b"]
+  private_subnets = ["10.0.1.0/24", "10.0.2.0/24"]
+  public_subnets  = ["10.0.3.0/24", "10.0.4.0/24"]
 
-resource "aws_subnet" "private" {
-  for_each = toset(var.private_subnets)
-  vpc_id = aws_vpc.this.id
-  cidr_block = each.value
-  map_public_ip_on_launch = false
-  tags = { Name = "${var.cluster_name}-private-${each.key}" }
+  enable_nat_gateway = true
 }
-
-resource "aws_route_table" "public" {
-  vpc_id = aws_vpc.this.id
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.igw.id
-  }
-  tags = { Name = "${var.cluster_name}-public-rt" }
-}
-
-resource "aws_route_table_association" "pub_assoc" {
-  for_each = aws_subnet.public
-  subnet_id = each.value.id
-  route_table_id = aws_route_table.public.id
-}
-

@@ -1,0 +1,35 @@
+controller:
+  serviceType: LoadBalancer
+
+  # admin credentials — many charts expect these top-level keys
+  # It's safer to supply these via a Kubernetes Secret; this is an example only.
+  admin.User: admin
+  admin.Password: "admin123"
+
+  # Only run Jenkins controller on jenkins node (ensure nodes are labeled `type=jenkins`)
+  nodeSelector:
+    type: jenkins
+
+  installPlugins:
+    - kubernetes
+    - workflow-aggregator
+    - git
+    - docker-workflow
+    - credentials-binding
+    - cloudbees-docker-build-and-publish
+
+  # Enable persistence so Jenkins state survives restarts
+  persistence:
+    enabled: true
+    storageClass: gp2
+    size: 10Gi
+
+# RBAC settings are often top-level in the chart values
+rbac:
+  create: true
+
+agent:
+  enabled: true
+  nodeSelector:
+    type: jenkins
+
